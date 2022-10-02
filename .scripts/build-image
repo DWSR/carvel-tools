@@ -1,0 +1,30 @@
+#!/bin/sh -eux
+
+image_name='ghcr.io/dwsr/carvel-tools'
+
+arm64_id_file="$(mktemp)"
+amd64_id_file="$(mktemp)"
+
+docker build \
+  --platform linux/arm64 \
+  --iidfile "${arm64_id_file}" \
+  --tag "${image_name}" \
+  --build-arg IMGPKG_VERSION=v0.33.0 \
+  --build-arg IMGPKG_CHECKSUM=08c8eafd44a0a51c47a06d9f5146e8659b88878e6f053fb1a6cc7eeed7f8019f \
+  --build-arg KBLD_VERSION=v0.35.0 \
+  --build-arg KBLD_CHECKSUM=54e92ff92e66a4b86d7768019cb3b40c87e0e6084380c9a765679b2d342fc4f8 \
+  .
+
+docker build \
+  --platform linux/amd64 \
+  --iidfile "${amd64_id_file}" \
+  --tag "${image_name}" \
+  --build-arg IMGPKG_VERSION=v0.33.0 \
+  --build-arg IMGPKG_CHECKSUM=10a8327490ca3dbfa3d00f90ae442838d364e4d7d158786e94aa1ff0438dab27 \
+  --build-arg KBLD_VERSION=v0.35.0 \
+  --build-arg KBLD_CHECKSUM=1c3f0e4171063eef70cdabf1730d3557af992aeafb423755e71e9d5f1aea2c9b \
+  .
+
+docker manifest create "${image_name}:latest" "$(cat "${arm64_id_file}")" "$(cat "${amd64_id_file}")"
+
+# docker manifest push "${image_name}:latest"

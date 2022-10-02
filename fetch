@@ -1,0 +1,43 @@
+#!/bin/sh -eu
+
+if [ "${#}" != '3' ]; then
+echo 'Must supply exactly 3 arguments:' >&2
+echo '  Tool name (e.g. kbld)'
+echo '  Tool version (e.g. v0.35.0)'
+echo '  Checksum'
+exit 1
+fi
+
+get_arch() {
+case "$(uname -m)" in
+'aarch64')
+echo 'arm64'
+;;
+'x86_64')
+echo 'amd64'
+;;
+esac
+}
+
+download_bin() {
+curl -s -L "https://github.com/vmware-tanzu/carvel-${1}/releases/download/${2}/${1}-linux-$(get_arch)" >"/tmp/${1}"
+}
+
+match_checksum() {
+echo "${2}  /tmp/${1}" | shasum -c -
+}
+
+install_bin() {
+mv "/tmp/${1}" "/usr/local/bin/${1}"
+chmod +x "/usr/local/bin/${1}"
+}
+
+tool_name="${1}"
+tool_version="${2}"
+tool_checksum="${3}"
+
+echo "Installing ${tool_name} ${tool_version}..."
+download_bin "${tool_name}" "${tool_version}"
+match_checksum "${tool_name}" "${tool_checksum}"
+install_bin "${tool_name}"
+echo "Installed ${tool_name} ${tool_version}"
